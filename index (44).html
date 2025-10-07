@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terabox Free Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        #login-screen, #lock-screen, #main-content, #video-modal, #popup { display: none; }
+        #login-screen.active, #lock-screen.active, #main-content.active, #video-modal.active, #popup.active { display: flex; }
+        #video-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
+        #timer { position: absolute; top: 10px; right: 10px; color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 20px; }
+        #close-video { position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer; color: white; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        #popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 90%; width: 400px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 30px; width: 100%; max-width: 400px; }
+        .input-field { width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px; font-size: 16px; transition: all 0.3s; }
+        .input-field:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: all 0.3s; cursor: pointer; border: none; margin-bottom: 12px; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .btn-secondary { background: #60a5fa; color: white; }
+        .btn-secondary:hover { background: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4); }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+        .btn-outline { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; }
+        .btn-outline:hover { background: #3b82f6; color: white; }
+        .logo { font-size: 32px; font-weight: 700; margin-bottom: 10px; background: linear-gradient(90deg, #3b82f6, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: #64748b; margin-bottom: 24px; text-align: center; }
+        .divider { height: 1px; background: #e2e8f0; margin: 20px 0; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-sky-100 flex items-center justify-center min-h-screen p-4">
+    <!-- Login Screen -->
+    <div id="login-screen" class="active flex flex-col items-center justify-center w-full max-w-md">
+        <div class="card">
+            <div class="logo text-center">Terabox Downloader</div>
+            <p class="subtitle">Login or create an account to continue</p>
+            
+            <input id="email-input" type="email" placeholder="Enter your email" class="input-field">
+            <input id="user-password-input" type="password" placeholder="Enter your password" class="input-field">
+            
+            <button id="login-btn" class="btn btn-primary">Login / Register</button>
+            
+            <div class="divider"></div>
+            
+            <p class="text-sm text-center text-gray-600">
+                By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
+        </div>
+    </div>
+
+    <!-- Lock Screen -->
+    <div id="lock-screen" class="flex flex-col items-center justify-center w-full max-w-md">
+        <div class="card">
+            <div class="logo text-center">Terabox Downloader</div>
+            <p class="subtitle">Enter access key to unlock 24-hour access</p>
+            
+            <input id="access-key-input" type="text" placeholder="Enter access key" class="input-field">
+            
+            <button id="submit-password" class="btn btn-primary">Submit Key</button>
+            <button id="get-access-key" class="btn btn-secondary">Get 24-Hour Access Key</button>
+            <button id="how-to-get-key" class="btn btn-warning">How to Get Access Key</button>
+            
+            <div class="divider"></div>
+            
+            <button id="logout-btn" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="video-modal" class="flex items-center justify-center">
+        <span id="close-video" class="cursor-pointer">✕</span>
+        <video id="instruction-video" controls class="w-3/4 max-w-3xl rounded-lg shadow-2xl">
+            <source id="video-source" src="https://ik.imagekit.io/tk3epohn3/1004.mp4?updatedAt=1759571721073" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="w-full h-full flex flex-col">
+        <div id="timer" class="self-end m-4">Time Left: 23:59:58</div>
+        <iframe src="https://terabox-downloader-mini-app.netlify.app/" class="w-full h-full rounded-lg shadow-lg border border-gray-200"></iframe>
+    </div>
+
+    <!-- Popup Message -->
+    <div id="popup" class="flex flex-col items-center text-center">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <p id="popup-message" class="text-gray-800 text-lg mb-6 font-medium"></p>
+        <button id="popup-close" class="btn btn-primary w-32">OK</button>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyALtwwY3NGJ5qZss_EVAwEFi9TAZh-3mGU",
+            authDomain: "terabox-free-downloader.firebaseapp.com",
+            databaseURL: "https://terabox-free-downloader-default-rtdb.firebaseio.com",
+            projectId: "terabox-free-downloader",
+            storageBucket: "terabox-free-downloader.firebasestorage.app",
+            messagingSenderId: "60026121755",
+            appId: "1:60026121755:web:9f1d2e5355784be7bb12be"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // DOM Elements
+        const loginScreen = document.getElementById('login-screen');
+        const lockScreen = document.getElementById('lock-screen');
+        const mainContent = document.getElementById('main-content');
+        const videoModal = document.getElementById('video-modal');
+        const emailInput = document.getElementById('email-input');
+        const userPasswordInput = document.getElementById('user-password-input');
+        const accessKeyInput = document.getElementById('access-key-input');
+        const loginBtn = document.getElementById('login-btn');
+        const submitPasswordBtn = document.getElementById('submit-password');
+        const getAccessKeyBtn = document.getElementById('get-access-key');
+        const howToGetKeyBtn = document.getElementById('how-to-get-key');
+        const logoutBtn = document.getElementById('logout-btn');
+        const closeVideoBtn = document.getElementById('close-video');
+        const timerDisplay = document.getElementById('timer');
+        const videoSource = document.getElementById('video-source');
+        const popup = document.getElementById('popup');
+        const popupMessage = document.getElementById('popup-message');
+        const popupClose = document.getElementById('popup-close');
+
+        // Show Popup
+        function showPopup(message) {
+            popupMessage.textContent = message;
+            popup.classList.add('active');
+        }
+
+        // Close Popup
+        popupClose.addEventListener('click', () => {
+            popup.classList.remove('active');
+        });
+
+        // Load Video Source from Firebase
+        db.ref('settings/videoLink').once('value', (snapshot) => {
+            const link = snapshot.val() || 'https://ik.imagekit.io/tk3epohn3/1004.mp4?updatedAt=1759571721073';
+            videoSource.src = link;
+            document.getElementById('instruction-video').load();
+        });
+
+        // Timer Logic
+        function startTimer(email) {
+            db.ref(`users/${email.replace(/\./g, '_')}/accessEndTime`).once('value', (snapshot) => {
+                let accessEndTime = snapshot.val();
+                if (!accessEndTime || accessEndTime < Date.now()) {
+                    lockScreen.classList.add('active');
+                    mainContent.classList.remove('active');
+                    return;
+                }
+
+                const interval = setInterval(() => {
+                    const timeLeft = accessEndTime - Date.now();
+                    if (timeLeft <= 0) {
+                        clearInterval(interval);
+                        db.ref(`users/${email.replace(/\./g, '_')}/accessEndTime`).remove();
+                        lockScreen.classList.add('active');
+                        mainContent.classList.remove('active');
+                        return;
+                    }
+
+                    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    timerDisplay.textContent = `Time Left: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            });
+        }
+
+        // Auto-login Check
+        const savedEmail = localStorage.getItem('email');
+        if (savedEmail) {
+            const emailKey = savedEmail.replace(/\./g, '_');
+            db.ref(`users/${emailKey}`).once('value', (snapshot) => {
+                const userData = snapshot.val();
+                if (userData && userData.password) {
+                    loginScreen.classList.remove('active');
+                    const accessEndTime = userData.accessEndTime;
+                    if (accessEndTime && accessEndTime > Date.now()) {
+                        lockScreen.classList.remove('active');
+                        mainContent.classList.add('active');
+                        startTimer(savedEmail);
+                    } else {
+                        lockScreen.classList.add('active');
+                    }
+                } else {
+                    loginScreen.classList.add('active');
+                }
+            });
+        }
+
+        // Login / Register
+        loginBtn.addEventListener('click', () => {
+            const email = emailInput.value.trim();
+            const userPassword = userPasswordInput.value;
+            if (!email) {
+                showPopup('Please enter an email!');
+                return;
+            }
+            if (!userPassword) {
+                showPopup('Please enter your password!');
+                return;
+            }
+
+            const emailKey = email.replace(/\./g, '_');
+            db.ref(`users/${emailKey}`).once('value', (snapshot) => {
+                const userData = snapshot.val();
+                if (userData && userData.password && userData.password !== userPassword) {
+                    showPopup('Incorrect password!');
+                    return;
+                }
+
+                if (!userData) {
+                    // Register new user
+                    db.ref(`users/${emailKey}`).set({
+                        password: userPassword,
+                        accessEndTime: null
+                    });
+                }
+
+                localStorage.setItem('email', email);
+                loginScreen.classList.remove('active');
+                if (userData && userData.accessEndTime && userData.accessEndTime > Date.now()) {
+                    lockScreen.classList.remove('active');
+                    mainContent.classList.add('active');
+                    startTimer(email);
+                } else {
+                    lockScreen.classList.add('active');
+                }
+            });
+        });
+
+        // Submit Access Key
+        submitPasswordBtn.addEventListener('click', () => {
+            const email = localStorage.getItem('email');
+            const accessKey = accessKeyInput.value;
+            if (!accessKey) {
+                showPopup('Please enter the access key!');
+                return;
+            }
+
+            db.ref('settings/password').once('value', (snapshot) => {
+                const correctAccessKey = snapshot.val();
+                if (accessKey === correctAccessKey) {
+                    const emailKey = email.replace(/\./g, '_');
+                    db.ref(`users/${emailKey}/accessEndTime`).once('value', (snapshot) => {
+                        const existingTime = snapshot.val();
+                        if (existingTime && existingTime > Date.now()) {
+                            showPopup('This email already has active access. Please wait until it expires.');
+                            return;
+                        }
+
+                        const accessEndTime = Date.now() + 24 * 60 * 60 * 1000; // 24 hours from now
+                        db.ref(`users/${emailKey}/accessEndTime`).set(accessEndTime);
+                        lockScreen.classList.remove('active');
+                        mainContent.classList.add('active');
+                        startTimer(email);
+                    });
+                } else {
+                    showPopup('Incorrect Access Key!');
+                }
+            });
+        });
+
+        // Get Access Key Redirect
+        getAccessKeyBtn.addEventListener('click', () => {
+            db.ref('settings/accessLink').once('value', (snapshot) => {
+                const link = snapshot.val() || 'https://example.com';
+                window.open(link, '_blank');
+            });
+        });
+
+        // Show How to Get Key Video
+        howToGetKeyBtn.addEventListener('click', () => {
+            videoModal.classList.add('active');
+        });
+
+        // Close Video Modal
+        closeVideoBtn.addEventListener('click', () => {
+            videoModal.classList.remove('active');
+            document.getElementById('instruction-video').pause();
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('email');
+            loginScreen.classList.add('active');
+            lockScreen.classList.remove('active');
+            mainContent.classList.remove('active');
+        });
+    </script>
+</body>
+</html>
