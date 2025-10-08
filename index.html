@@ -75,7 +75,7 @@
     <!-- Video Modal -->
     <div id="video-modal" class="flex items-center justify-center">
         <span id="close-video" class="cursor-pointer">✕</span>
-        <video id="instruction-video" controls class="w-3/4 max-w-3xl rounded-lg shadow-2xl">
+        <video id="instruction-video" controls allowfullscreen class="w-3/4 max-w-3xl rounded-lg shadow-2xl">
             <source id="video-source" src="https://ik.imagekit.io/tk3epohn3/1004.mp4?updatedAt=1759571721073" type="video/mp4">
         </video>
     </div>
@@ -83,7 +83,7 @@
     <!-- Main Content -->
     <div id="main-content" class="w-full h-full flex flex-col">
         <div id="timer" class="self-end m-4">Time Left: 23:59:58</div>
-        <iframe src="https://terabox-video-downloader-telegram.netlify.app" class="w-full h-full rounded-lg shadow-lg border border-gray-200"></iframe>
+        <iframe src="https://terabox-video-downloader-telegram.netlify.app" class="w-full h-full rounded-lg shadow-lg border border-gray-200" allowfullscreen></iframe>
     </div>
 
     <!-- Popup Message -->
@@ -302,7 +302,4 @@
         });
     </script>
 </body>
-
 </html>
-
-
